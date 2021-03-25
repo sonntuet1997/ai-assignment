@@ -10,7 +10,7 @@ import tensorflow as tf
 print("Initialising classifier...")
 OFF_Detector = OffensiveDetector(model_parameters)
 
-x_train, x_test, y_train, y_test = get_train_data('data/train.csv', multiclass=False, multilabel=False)
+x_train, x_test, y_train, y_test = get_train_data('data/train.csv', multiclass=False)
 
 if environment['is_training']:
     if environment['SMOTE_flag']:
@@ -50,7 +50,7 @@ if environment['is_training']:
         print('\n')
         print("Building final model...")
         with tf.device('/device:GPU:0'):
-            callback = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=3)
+            callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
             OFF_Detector.build()
             if environment['class_weights_flag']:
                 OFF_Detector.train(x_train, y_train, weights)

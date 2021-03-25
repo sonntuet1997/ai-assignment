@@ -5,24 +5,28 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from sklearn.utils.class_weight import compute_class_weight
 import numpy as np
+import os
 
 
-def get_train_data(data_path, multiclass=False, multilabel=False):
+def get_train_data(data_path, multiclass=False):
     train_data = pd.read_csv(data_path)
     train_data.drop(['id'], axis=1, inplace=True)
     for c in environment['classes']:
         train_data[c].value_counts()
-
-    train_data['comment_text'] = hp.process_tweets(train_data['comment_text'])
+    train_data['comment_text'] = hp.process_comments(train_data['comment_text'])
+    print(train_data['comment_text'])
     # print(train_data['comment_text'])
-    train_labels = hp.get_labels(train_data, environment['classes'], multiclass, multilabel)
-    model_parameters['classes'] = np.unique(train_labels)
-    model_parameters['num_classes'] = len(np.unique(train_labels))
+    train_labels = hp.get_labels(train_data, environment['classes'], multiclass)
+    if not multiclass:
+        model_parameters['classes'] = np.unique(train_labels)
+        model_parameters['num_classes'] = len(np.unique(train_labels))
+    else:
+        model_parameters['classes'] = environment['classes']
+        model_parameters['num_classes'] = len(environment['classes'])
     # print(train_labels)
     train_data, encoded_train_labels, tokenizer, size_of_vocab = hp.data_preparation(train_data['comment_text'],
                                                                                      train_labels,
-                                                                                     model_parameters['num_classes'],
-                                                                                     multilabel)
+                                                                                     model_parameters['num_classes'])
     model_parameters['tokenizer'] = tokenizer
     model_parameters['vocab_size'] = size_of_vocab
 

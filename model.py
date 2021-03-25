@@ -106,7 +106,7 @@ class OffensiveDetector:
         if self.hparams['num_classes'] == 2:
             model.add(Dense(1, activation='sigmoid'))
         elif self.hparams['num_classes'] > 2:
-            model.add(Dense(7, activation='softmax'))
+            model.add(Dense(6, activation='softmax'))
 
         self.model = model
         if self.hparams['num_classes'] == 2:
@@ -125,7 +125,7 @@ class OffensiveDetector:
         return model
 
     def train(self, X_train_val, y_train_val, computed_weights=None, callbacks=None):
-        self.model.fit(X_train_val, y_train_val, batch_size=256, validation_split=0.25, epochs=self.hparams['epochs'],
+        self.model.fit(X_train_val, y_train_val, batch_size=256, validation_split=0.2, epochs=self.hparams['epochs'],
                        class_weight=computed_weights, callbacks=callbacks)
         self.model.save('trained_models/' + environment['task'] + "_" + model_parameters['embedding'] + "_model.h5")
         # self.model.save_weights('trained_models/')
@@ -172,24 +172,18 @@ class OffensiveDetector:
     def predict(self, data_path, task):
         dataset = pd.read_csv(data_path)
         dataset = hp.remove_excess(dataset)
-        dataset['comment_text'] = hp.process_tweets(dataset['comment_text'])
-        # tokenizer = Tokenizer()
-        # tokenizer.fit_on_texts(dataset['comment_text'])
-        # self.hparams['tokenizer'] = tokenizer
-        # vocabulary_size = len(tokenizer.word_counts) + 1
-        # self.hparams['vocab_size'] = vocabulary_size
+        dataset['comment_text'] = hp.process_comments(dataset['comment_text'])
         test_sequences = self.hparams['tokenizer'].texts_to_sequences(dataset['comment_text'])
         test_data_sequence = pad_sequences(test_sequences, maxlen=50)
         self.model = load_model('trained_models/' + environment['task'] + "_" + model_parameters['embedding'] +
                                 "_model.h5")
-        # self.model.load_weights('trained_models/')
         predictions = self.model.predict(test_data_sequence)
         predictions_round = [np.round(x) for x in predictions]
         out = np.concatenate(predictions_round).ravel()
         if task == 'binary':
             dataset['label'] = ["NOT" if x == 0 else "OFF" for x in out]
-        # if task == 'multi':
-        #     class_labels = np.argmax(np.array(predictions), axis=1)
-        #     out = np.concatenate(predictions).ravel()
-        #     dataset['label'] = ["IND" if x == 1 else "GRP" if x == 0 else "OTH" for x in class_labels]
+        if task == 'multi':
+            target_cols = np.array(environment['classes'])
+            final_predict_test = pd.concat([pd.DataFrame(predictions_round, columns=target_cols)], 1)
+            dataset = pd.concat([dataset, final_predict_test], 1)
         return dataset

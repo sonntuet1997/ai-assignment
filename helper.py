@@ -150,44 +150,46 @@ def expandContractions(text, c_re=c_re):
     return c_re.sub(replace, text)
 
 
-def process_tweets(tweets_column):
+def process_comments(comments_column):
     # Apostrophe expansion
-    tweets_column = tweets_column.apply(lambda x: x.replace("’", "'"))
-    tweets_column = tweets_column.apply(lambda x: expandContractions(x))
+    comments_column = comments_column.apply(lambda x: x.replace("’", "'"))
+    comments_column = comments_column.apply(lambda x: expandContractions(x))
     # Lowercase tweets
-    tweets_column = tweets_column.apply(lambda x: x.lower())
+    comments_column = comments_column.apply(lambda x: x.lower())
     # Remove url, hashtags, cashtags, twitter handles, and RT. Only words
-    tweets_column = tweets_column.apply(lambda x: ' '.join(re.sub(
+    comments_column = comments_column.apply(lambda x: ' '.join(re.sub(
         r"(@[A-Za-z0-9]+)|^rt |(#[A-Za-z0-9]+) |(\w+:\/*\S+)|[^a-zA-Z\s]", "", x).split()))
     # Remove url token
-    tweets_column = tweets_column.apply(lambda x: x.replace('url', ''))
+    comments_column = comments_column.apply(lambda x: x.replace('url', ''))
     # Lemmatisation
     tokeniser = TweetTokenizer()
     wordnet_lemmatizer = WordNetLemmatizer()
-    tweets_column = tweets_column.apply(lambda x: [word for word in tokeniser.tokenize(x)])
+    comments_column = comments_column.apply(lambda x: [word for word in tokeniser.tokenize(x)])
     sym_spell = SymSpell()
     dictionary_path = pkg_resources.resource_filename("symspellpy", "frequency_dictionary_en_82_765.txt")
     sym_spell.load_dictionary(dictionary_path, 0, 1)
     # spell_checkers.create_dictionary("eng_dict.txt")
     print("Spell checker...")
-    for i in range(len(tweets_column)):
+    for i in range(len(comments_column)):
         try:
-            print('%i out of %i' % (i, len(tweets_column)))
-            for j in range(len(tweets_column[i])):
-                suggestions = sym_spell.lookup(tweets_column[i][j], Verbosity.CLOSEST,
-                                               max_edit_distance=2)
+            if i == (len(comments_column) - 1) or i % 10000 == 0:
+                print('%i out of %i' % (i, len(comments_column)))
+            for j in range(len(comments_column[i])):
+                suggestions = sym_spell.lookup(comments_column[i][j], Verbosity.CLOSEST, max_edit_distance=2)
+                # suggestions = spell_checkers.get_suggestions(comments_column[i][j])
                 if suggestions:
-                    best_sugg = str(suggestions[0])
-                    tweets_column[i][j] = best_sugg
+                    best_sugg = str(suggestions[0].split(',')[0].strip())
+                    # best_sugg = str(suggestions[0])
+                    comments_column[i][j] = best_sugg
         except:
             continue
     
-    tweets_column = tweets_column.apply(lambda x: ' '.join([wordnet_lemmatizer.lemmatize(word, pos="v") for word in x]))
+    comments_column = comments_column.apply(lambda x: ' '.join([wordnet_lemmatizer.lemmatize(word, pos="v") for word in x]))
     
-    return tweets_column
+    return comments_column
 
 
-def data_preparation(X, y, num_classes, multilabel=False):
+def data_preparation(X, y, num_classes):
     # Create train_sequences
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(X)
@@ -196,12 +198,12 @@ def data_preparation(X, y, num_classes, multilabel=False):
     train_data = pad_sequences(train_sequences, maxlen=50)
     
     # Encode class values as integers
-    if not multilabel:
+    if num_classes == 2:
         encoder = LabelEncoder()
+        encoded_train_labels = encoder.fit_transform(y)
     else:
-        encoder = MultiLabelBinarizer()
+        return train_data, y, tokenizer, vocabulary_size
     # encoder.fit(y)
-    encoded_train_labels = encoder.fit_transform(y)
     # print(encoder.classes_)
     print('\n')
     print("Training labels: ")
@@ -209,13 +211,11 @@ def data_preparation(X, y, num_classes, multilabel=False):
     print('\n')
     print("Encoded labels: ")
     print(encoded_train_labels[:5])
-    if num_classes > 2:
-        encoded_train_labels = np_utils.to_categorical(encoded_train_labels)
     
     return train_data, encoded_train_labels, tokenizer, vocabulary_size
 
 
-def get_labels(data, classes, multiclass=False, multilabel=False):
+def get_labels(data, classes, multiclass=False):
     res = []
     if not multiclass:
         for i in range(len(data)):
@@ -227,26 +227,8 @@ def get_labels(data, classes, multiclass=False, multilabel=False):
                 res.append('OFF')
             else:
                 res.append('NOT')
-    elif not multilabel:
-        for i in range(len(data)):
-            temp = []
-            for c in classes:
-                if data.iloc[[i]][c].values == [1]:
-                    temp.append(c)
-            if not temp:
-                res.append('not')
-            else:
-                res.append(temp[-1])
     else:
-        for i in range(len(data)):
-            temp = []
-            for c in classes:
-                if data.iloc[[i]][c].values == [1]:
-                    temp.append(c)
-            if not temp:
-                res.append(['not'])
-            else:
-                res.append(temp)
+        return data[classes]
     return res
 
 
