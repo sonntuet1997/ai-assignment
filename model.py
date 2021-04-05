@@ -14,6 +14,7 @@ import pandas as pd
 from constants import model_parameters, environment
 import itertools
 import helper as hp
+import pickle
 
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -37,16 +38,23 @@ class OffensiveDetector:
                 word = values[0]
                 coefs = np.asarray(values[1:], dtype='float32')
                 embeddings_index[word] = coefs
-        else:
+        elif model_parameters['embedding'] == 'word2vec':
             f = open('embeddings/word2vec.300d.txt', encoding="utf8")
             for line in f:
                 values = line.split()
                 word = values[0][:values[0].find("_")].lower()
                 coefs = np.asarray(values[1:], dtype='float32')
                 embeddings_index[word] = coefs
-        f.close()
+                f.close()
+        else:
+            f = open('embeddings/trial_bert_embedding.pkl', 'rb')  # windows-1252
+            embeddings_index = pickle.load(f)
+            f.close()
 
-        embedding_matrix = np.zeros((self.hparams['vocab_size'], 300))
+        if model_parameters['embedding'] == 'bert':
+            embedding_matrix = np.zeros((self.hparams['vocab_size'], 768))
+        else:
+            embedding_matrix = np.zeros((self.hparams['vocab_size'], 300))
         for word, index in self.hparams['tokenizer'].word_index.items():
             if index > self.hparams['vocab_size'] - 1:
                 break
@@ -79,8 +87,12 @@ class OffensiveDetector:
         if self.hparams['use_pretrained_embedding']:
             print("\n")
             print("Using pretrained embedding matrix")
-            model.add(Embedding(self.hparams['vocab_size'], 300, input_length=50, weights=[self.embedding_matrix],
-                                trainable=False))  # trainable = false/true
+            if model_parameters['embedding'] == 'bert':
+                model.add(Embedding(self.hparams['vocab_size'], 768, input_length=50, weights=[self.embedding_matrix],
+                                    trainable=False))
+            else:
+                model.add(Embedding(self.hparams['vocab_size'], 300, input_length=50, weights=[self.embedding_matrix],
+                                    trainable=False))  # trainable = false/true
         else:
             model.add(Embedding(self.hparams['vocab_size'], 100, input_length=50))
         model.add(Bidirectional(LSTM(300, return_sequences=True, dropout=0.5, recurrent_dropout=0.5)))
