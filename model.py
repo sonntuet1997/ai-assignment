@@ -45,11 +45,11 @@ class OffensiveDetector:
                 word = values[0][:values[0].find("_")].lower()
                 coefs = np.asarray(values[1:], dtype='float32')
                 embeddings_index[word] = coefs
-                f.close()
+                # f.close()
         else:
-            f = open('embeddings/trial_bert_embedding.pkl', 'rb')  # windows-1252
+            f = open('embeddings/trial_bert_embedding.pkl', 'rb')
             embeddings_index = pickle.load(f)
-            f.close()
+            # f.close()
 
         if model_parameters['embedding'] == 'bert':
             embedding_matrix = np.zeros((self.hparams['vocab_size'], 768))
@@ -137,7 +137,7 @@ class OffensiveDetector:
         return model
 
     def train(self, X_train_val, y_train_val, computed_weights=None, callbacks=None):
-        self.model.fit(X_train_val, y_train_val, batch_size=256, validation_split=0.2, epochs=self.hparams['epochs'],
+        self.model.fit(X_train_val, y_train_val, batch_size=128, validation_split=0.2, epochs=self.hparams['epochs'],
                        class_weight=computed_weights, callbacks=callbacks)
         self.model.save('trained_models/' + environment['task'] + "_" + model_parameters['embedding'] + "_model.h5")
         # self.model.save_weights('trained_models/')
@@ -199,3 +199,18 @@ class OffensiveDetector:
             final_predict_test = pd.concat([pd.DataFrame(predictions_round, columns=target_cols)], 1)
             dataset = pd.concat([dataset, final_predict_test], 1)
         return dataset
+
+    def predict_single(self, sentence, task):
+        column = pd.Series([sentence])
+        column = hp.process_comments(column)
+        test_sequences = self.hparams['tokenizer'].texts_to_sequences(column)
+        test_data_sequence = pad_sequences(test_sequences, maxlen=50)
+        self.model = load_model('trained_models/' + environment['task'] + "_" + model_parameters['embedding'] +
+                                "_model.h5")
+        predictions = self.model.predict(test_data_sequence)
+        predictions_round = [np.round(x) for x in predictions]
+        out = np.concatenate(predictions_round).ravel()
+        result = []
+        if task == 'binary':
+            result = ["NOT" if x == 0 else "OFF" for x in out]
+        return result

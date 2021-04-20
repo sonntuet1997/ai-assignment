@@ -62,7 +62,8 @@ if environment['is_training']:
 if environment['predict_test_set_flag']:
     print('\n')
     print("Predicting test set...")
-    data = OFF_Detector.predict("data/test.csv", environment['task'])
+    data = OFF_Detector.predict_single("Fuck", environment['task'])
+    # data = OFF_Detector.predict("data/test.csv", environment['task'])
     print(data)
     # data[['id', 'comment_text', 'label']].to_csv('result.csv', index=False)
 

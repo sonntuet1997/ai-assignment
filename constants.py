@@ -1,9 +1,9 @@
 environment = {'SMOTE_flag': False,
                'class_weights_flag': True,
-               'is_training': True,
+               'is_training': False,
                'cross_validation_flag': False,
-               'build_final_model_flag': True,
-               'predict_test_set_flag': False,
+               'build_final_model_flag': False,
+               'predict_test_set_flag': True,
                'classes': ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'],
                'task': 'binary'
                }
