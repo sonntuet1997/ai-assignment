@@ -1,0 +1,49 @@
+version: "3.3"
+networks:
+  dev:
+    name: dev
+services:
+  server:
+#    deploy:
+#      resources:
+#        limits:
+#          memory: ${MEMORY_LIMIT}
+#        reservations:
+#          memory: ${MEMORY_RESERVATIONS}
+    image: sonntuet1997/ai-assignment:latest
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -c
+      - |
+        python manage.py runserver 0.0.0.0:8000
+    volumes:
+#      - ../trained_models:/app/trained_models
+      - ../data:/app/data
+      - ../db.sqlite3:/app/db.sqlite3
+    # environment:
+    #   - CONCURRENT
+    ports:
+#    #   - ${SERVER_PORT}:${SERVER_PORT}
+#      - 12345-12350:12345-12350
+      - 8000:8000
+#      - 26657-26660:26657-26660
+#      - 1317-1318:1317-1318
+    networks:
+      - dev
+    restart: always
+
+  nginx:
+    image: sonntuet1997/ai-assignment-proxy:latest
+    ports:
+      - ${PORT}:80
+    environment:
+      - API_URL
+      - UI_URL
+    restart: "always"
+    networks:
+      - dev
+  nextjs:
+    image: sonntuet1997/ai-assignment-ui:latest
+    networks:
+      - dev

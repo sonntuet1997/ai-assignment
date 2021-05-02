@@ -1,25 +1,8 @@
 import re
-from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
-import symspell_python as spell_checkers
 from symspellpy import SymSpell, Verbosity
 import pkg_resources
-
-import numpy as np
-
-from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer
-
-from keras.utils import np_utils
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-
-import constants
-import os
-
-import pandas as pd
-import nltk
-nltk.download('wordnet')
 cList = {
   "ain't": "am not",
   "aren't": "are not",
@@ -143,7 +126,6 @@ cList = {
 
 c_re = re.compile('(%s)' % '|'.join(cList.keys()))
 
-
 def expandContractions(text, c_re=c_re):
     def replace(match):
         return cList[match.group(0)]
@@ -187,53 +169,3 @@ def process_comments(comments_column):
     comments_column = comments_column.apply(lambda x: ' '.join([wordnet_lemmatizer.lemmatize(word, pos="v") for word in x]))
     
     return comments_column
-
-
-def data_preparation(X, y, num_classes):
-    # Create train_sequences
-    tokenizer = Tokenizer()
-    tokenizer.fit_on_texts(X)
-    vocabulary_size = len(tokenizer.word_counts) + 1
-    train_sequences = tokenizer.texts_to_sequences(X)
-    train_data = pad_sequences(train_sequences, maxlen=50)
-    
-    # Encode class values as integers
-    if num_classes == 2:
-        encoder = LabelEncoder()
-        encoded_train_labels = encoder.fit_transform(y)
-    else:
-        return train_data, y, tokenizer, vocabulary_size
-    # encoder.fit(y)
-    # print(encoder.classes_)
-    print('\n')
-    print("Training labels: ")
-    print(y[:5])
-    print('\n')
-    print("Encoded labels: ")
-    print(encoded_train_labels[:5])
-    
-    return train_data, encoded_train_labels, tokenizer, vocabulary_size
-
-
-def get_labels(data, classes, multiclass=False):
-    res = []
-    if not multiclass:
-        for i in range(len(data)):
-            flag = False
-            for c in classes:
-                if data.iloc[[i]][c].values == [1]:
-                    flag = True
-            if flag:
-                res.append('OFF')
-            else:
-                res.append('NOT')
-    else:
-        return data[classes]
-    return res
-
-
-def remove_excess(dataset):
-    labels = pd.read_csv('data/test_labels.csv')
-    res = pd.merge(dataset, labels, on='id')
-    res = res[res.toxic != -1]
-    return res

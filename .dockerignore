@@ -1,0 +1,7 @@
+deploy/
+.dockerignore
+Dockerfile
+.git/
+.gitignore
+.next/                # Existing Next.js builds
+.idea/

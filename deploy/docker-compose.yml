@@ -1,0 +1,36 @@
+version: "3.3"
+networks:
+  dev:
+    name: dev
+services:
+  server:
+#    deploy:
+#      resources:
+#        limits:
+#          memory: ${MEMORY_LIMIT}
+#        reservations:
+#          memory: ${MEMORY_RESERVATIONS}
+    image: sonntuet1997/ai-assignment:dev
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -c
+      - |
+        python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ..:/app
+#      - ./.starport:/root/.starport
+    # environment:
+    #   - CONCURRENT
+    ports:
+#    #   - ${SERVER_PORT}:${SERVER_PORT}
+#      - 12345-12350:12345-12350
+      - 8000:8000
+#      - 26657-26660:26657-26660
+#      - 1317-1318:1317-1318
+    networks:
+      - dev
+    restart: always
