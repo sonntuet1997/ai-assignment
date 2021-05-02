@@ -5,14 +5,17 @@ from constants import model_parameters, environment
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate
 import tensorflow as tf
+import pickle
 
 
 print("Initialising classifier...")
+if not environment['is_training']:
+    f = open('data/model_params.pkl', 'rb')
+    model_parameters = pickle.load(f)
 OFF_Detector = OffensiveDetector(model_parameters)
-x_train, x_test, y_train, y_test = get_train_data('data/train.csv', multiclass=False)
-print("3")
 
 if environment['is_training']:
+    x_train, x_test, y_train, y_test = get_train_data(['data/train.csv', 'data/test.csv'], multiclass=False)
     if environment['SMOTE_flag']:
         x_train, y_train = SMOTE_handling(x_train, y_train)
     elif environment['class_weights_flag']:
@@ -50,7 +53,7 @@ if environment['is_training']:
         print('\n')
         print("Building final model...")
         with tf.device('/device:GPU:0'):
-            callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
+            callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
             OFF_Detector.build()
             if environment['class_weights_flag']:
                 OFF_Detector.train(x_train, y_train, weights)
@@ -64,7 +67,7 @@ if environment['predict_test_set_flag']:
     print("Predicting test set...")
     data = OFF_Detector.predict_single("Fuck", environment['task'])
     # data = OFF_Detector.predict("data/test.csv", environment['task'])
-    # print(data)
-    # print(data[['id', 'comment_text', 'label']])
+    print(data)
+    # data[['id', 'comment_text', 'label']].to_csv('result.csv', index=False)
 
 
