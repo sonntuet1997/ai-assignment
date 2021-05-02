@@ -8,7 +8,7 @@ environment = {'SMOTE_flag': False,
                'task': 'binary'
                }
 
-model_parameters = {'epochs': 10,
+model_parameters = {'epochs': 20,
                     'classes': None,
                     'num_classes': None,
                     'tokenizer': None,

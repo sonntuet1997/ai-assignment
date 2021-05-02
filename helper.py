@@ -18,8 +18,8 @@ import constants
 import os
 
 import pandas as pd
-
-
+import nltk
+nltk.download('wordnet')
 cList = {
   "ain't": "am not",
   "aren't": "are not",
