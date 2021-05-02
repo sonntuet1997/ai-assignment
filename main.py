@@ -5,14 +5,17 @@ from constants import model_parameters, environment
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate
 import tensorflow as tf
+import pickle
 
 
 print("Initialising classifier...")
+if not environment['is_training']:
+    f = open('data/model_params.pkl', 'rb')
+    model_parameters = pickle.load(f)
 OFF_Detector = OffensiveDetector(model_parameters)
 
-x_train, x_test, y_train, y_test = get_train_data('data/train.csv', multiclass=False)
-
 if environment['is_training']:
+    x_train, x_test, y_train, y_test = get_train_data(['data/train.csv', 'data/test.csv'], multiclass=False)
     if environment['SMOTE_flag']:
         x_train, y_train = SMOTE_handling(x_train, y_train)
     elif environment['class_weights_flag']:

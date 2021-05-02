@@ -1,5 +1,5 @@
-environment = {'SMOTE_flag': False,
-               'class_weights_flag': True,
+environment = {'SMOTE_flag': True,
+               'class_weights_flag': False,
                'is_training': False,
                'cross_validation_flag': False,
                'build_final_model_flag': False,

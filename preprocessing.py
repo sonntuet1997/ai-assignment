@@ -8,13 +8,19 @@ import numpy as np
 import os
 
 
-def get_train_data(data_path, multiclass=False):
-    train_data = pd.read_csv(data_path)
+def get_train_data(data_paths, multiclass=False):
+    temp = []
+    for data_path in data_paths:
+        dataset = pd.read_csv(data_path)
+        if data_path == 'data/test.csv':
+            dataset = hp.remove_excess(dataset)
+        temp.append(dataset)
+    train_data = pd.concat(temp)
     train_data.drop(['id'], axis=1, inplace=True)
     for c in environment['classes']:
         train_data[c].value_counts()
     train_data['comment_text'] = hp.process_comments(train_data['comment_text'])
-    print(train_data['comment_text'])
+    # print(train_data['comment_text'])
     # print(train_data['comment_text'])
     train_labels = hp.get_labels(train_data, environment['classes'], multiclass)
     if not multiclass:

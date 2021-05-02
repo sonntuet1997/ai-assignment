@@ -156,7 +156,7 @@ def process_comments(comments_column):
     comments_column = comments_column.apply(lambda x: expandContractions(x))
     # Lowercase tweets
     comments_column = comments_column.apply(lambda x: x.lower())
-    # Remove url, hashtags, cashtags, twitter handles, and RT. Only words
+    # Remove url, hashtags, cashtags, twitter handles, RT, special characters. Only words
     comments_column = comments_column.apply(lambda x: ' '.join(re.sub(
         r"(@[A-Za-z0-9]+)|^rt |(#[A-Za-z0-9]+) |(\w+:\/*\S+)|[^a-zA-Z\s]", "", x).split()))
     # Remove url token

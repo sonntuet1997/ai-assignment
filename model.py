@@ -116,7 +116,7 @@ class OffensiveDetector:
         model.add(Flatten())
         #        model.add(Dropout(0.2))
         if self.hparams['num_classes'] == 2:
-            model.add(Dense(1, activation='sigmoid'))
+            model.add(Dense(1, activation='softmax'))
         elif self.hparams['num_classes'] > 2:
             model.add(Dense(6, activation='softmax'))
 
@@ -137,7 +137,7 @@ class OffensiveDetector:
         return model
 
     def train(self, X_train_val, y_train_val, computed_weights=None, callbacks=None):
-        self.model.fit(X_train_val, y_train_val, batch_size=128, validation_split=0.2, epochs=self.hparams['epochs'],
+        self.model.fit(X_train_val, y_train_val, batch_size=256, validation_split=0.2, epochs=self.hparams['epochs'],
                        class_weight=computed_weights, callbacks=callbacks)
         self.model.save('trained_models/' + environment['task'] + "_" + model_parameters['embedding'] + "_model.h5")
         # self.model.save_weights('trained_models/')
